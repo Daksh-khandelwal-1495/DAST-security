@@ -1,0 +1,63 @@
+# Docker ignore file - exclude unnecessary files from Docker builds
+
+# Git
+.git
+.gitignore
+.github
+
+# Documentation
+*.md
+!README.md
+
+# Environment files (use environment variables instead)
+.env
+.env.*
+!.env.example
+
+# Test files
+test_*.py
+*_test.py
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.coverage
+
+# Reports (generated at runtime)
+reports/
+*.html
+*.json
+report.*
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Node
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+
+# Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp

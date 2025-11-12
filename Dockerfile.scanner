@@ -1,0 +1,50 @@
+# Dockerfile for DAST Scanner with AI Analysis
+# Complete security scanning platform with all features
+
+FROM python:3.10-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /scanner
+
+# Copy Python requirements
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy scanner scripts
+COPY ai_classifier_v2.py .
+COPY remediation_engine.py .
+COPY slack_reporter_full.py .
+COPY build_breaker.py .
+
+# Environment variables with defaults
+ENV SLACK_BOT_TOKEN="" \
+    SLACK_CHANNEL="#security-alerts" \
+    GEMINI_API_KEY="" \
+    USE_AI_CLASSIFICATION=true \
+    MAX_CRITICAL_VULNS=0 \
+    MAX_HIGH_VULNS=3 \
+    MAX_MEDIUM_VULNS=10 \
+    AI_SEVERITY_THRESHOLD=8.0 \
+    BREAK_BUILD_ON_CRITICAL=true
+
+# Create directory for reports
+RUN mkdir -p /reports
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD python -c "import sys; sys.exit(0)"
+
+# Run as non-root user
+RUN useradd -m -u 1001 scanner && chown -R scanner:scanner /scanner /reports
+USER scanner
+
+# Default command shows help
+CMD ["python", "slack_reporter_full.py", "--help"]

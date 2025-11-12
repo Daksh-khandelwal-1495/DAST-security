@@ -1,0 +1,85 @@
+services:
+  # Vulnerable Web Application
+  web-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dast-vulnerable-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    networks:
+      - dast-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # OWASP ZAP Scanner
+  zap-scanner:
+    image: ghcr.io/zaproxy/zaproxy:stable
+    container_name: dast-zap-scanner
+    command: zap-baseline.py -t http://web-app:3000 -r /zap/reports/report.html -J /zap/reports/report.json -m 2
+    volumes:
+      - ./reports:/zap/reports
+      - ./zap-config:/zap/wrk:rw
+    depends_on:
+      web-app:
+        condition: service_healthy
+    networks:
+      - dast-network
+    profiles:
+      - scan  # Only runs when explicitly requested
+
+  # AI-Powered DAST Analyzer & Reporter
+  dast-analyzer:
+    build:
+      context: .
+      dockerfile: Dockerfile.scanner
+    container_name: dast-analyzer
+    environment:
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_CHANNEL=${SLACK_CHANNEL:-#security-alerts}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - USE_AI_CLASSIFICATION=${USE_AI_CLASSIFICATION:-true}
+      - MAX_CRITICAL_VULNS=${MAX_CRITICAL_VULNS:-0}
+      - MAX_HIGH_VULNS=${MAX_HIGH_VULNS:-3}
+      - MAX_MEDIUM_VULNS=${MAX_MEDIUM_VULNS:-10}
+      - AI_SEVERITY_THRESHOLD=${AI_SEVERITY_THRESHOLD:-8.0}
+      - BREAK_BUILD_ON_CRITICAL=${BREAK_BUILD_ON_CRITICAL:-true}
+    volumes:
+      - ./reports:/reports
+    depends_on:
+      - zap-scanner
+    networks:
+      - dast-network
+    profiles:
+      - scan  # Only runs when explicitly requested
+    command: >
+      sh -c "
+        echo '🔍 Waiting for ZAP scan to complete...' &&
+        sleep 30 &&
+        if [ -f /reports/report.json ]; then
+          echo '📊 Analyzing results with AI...' &&
+          python slack_reporter_full.py /reports/report.json javascript &&
+          echo '🔒 Running security gate...' &&
+          python build_breaker.py /reports/report.json
+        else
+          echo '❌ No scan report found!'
+          exit 1
+        fi
+      "
+
+networks:
+  dast-network:
+    driver: bridge
+    name: dast-security-network
+
+volumes:
+  reports:
+    name: dast-reports
