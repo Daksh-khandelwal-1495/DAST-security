@@ -57,3 +57,14 @@ jobs:
           USE_AI_CLASSIFICATION: true
         run: |
           python slack_reporter_full.py report.json javascript
+      
+      - name: Security Gate - Build Breaker
+        if: always()
+        env:
+          MAX_CRITICAL_VULNS: 0
+          MAX_HIGH_VULNS: 3
+          MAX_MEDIUM_VULNS: 10
+          AI_SEVERITY_THRESHOLD: 8.0
+          BREAK_BUILD_ON_CRITICAL: ${{ vars.BREAK_BUILD_ON_CRITICAL || 'true' }}
+        run: |
+          python build_breaker.py report.json
