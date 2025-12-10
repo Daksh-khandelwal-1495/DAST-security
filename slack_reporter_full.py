@@ -61,9 +61,36 @@ class FullDastSlackReporter:
         with open(report_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
         
-        site = data.get('site', [{}])[0]
-        alerts = site.get('alerts', [])
+        # Handle both single site and multiple sites
+        sites = data.get('site', [])
+        if not isinstance(sites, list):
+            sites = [sites]
         
+        # Find the target site (vulnerable-web-app) or use the one with most alerts
+        target_site = None
+        max_alerts = 0
+        
+        for site in sites:
+            site_name = site.get('@name', '')
+            site_alerts = site.get('alerts', [])
+            
+            # Prioritize our target app
+            if 'vulnerable-web-app' in site_name or 'onrender.com' in site_name:
+                target_site = site
+                break
+            
+            # Otherwise use site with most findings
+            if len(site_alerts) > max_alerts:
+                max_alerts = len(site_alerts)
+                target_site = site
+        
+        if not target_site:
+            target_site = sites[0] if sites else {}
+        
+        alerts = target_site.get('alerts', [])
+        site_name = target_site.get('@name', 'Unknown')
+        
+        print(f"📊 Target: {site_name}")
         print(f"📊 Found {len(alerts)} vulnerability types")
         
         # Limit to top 10 critical/high vulnerabilities to avoid rate limits
@@ -104,7 +131,7 @@ class FullDastSlackReporter:
             severity_counts[risk] = severity_counts.get(risk, 0) + 1
         
         return {
-            'site': site.get('@name', 'Unknown'),
+            'site': site_name,
             'alerts': classified_alerts,
             'total': len(classified_alerts),
             'severity_counts': severity_counts,
