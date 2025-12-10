@@ -39,8 +39,13 @@ jobs:
             -m 2 \
             -a \
             -j \
-            -r /zap/wrk/report.html \
-            -J /zap/wrk/report.json || true
+            -r report.html \
+            -J report.json || true
+      
+      - name: List generated files
+        run: |
+          echo "Files in workspace:"
+          ls -la ${{ github.workspace }}
           
       - name: Upload ZAP Reports
         uses: actions/upload-artifact@v4
