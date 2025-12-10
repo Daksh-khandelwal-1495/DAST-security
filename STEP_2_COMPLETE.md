@@ -154,7 +154,7 @@ app.get('/search', (req, res) => {
 
 1. **Add GitHub Secrets:**
    - Go to: Repository → Settings → Secrets and variables → Actions
-   - Add: `GEMINI_API_KEY` = `AIzaSyAOSIr9GKU-pyCpnV-7aFdmBlPZjR_V89c`
+   - Add: `GEMINI_API_KEY` = `*****`
    - Verify: `SLACK_BOT_TOKEN` exists
 
 2. **Commit & Push:**
