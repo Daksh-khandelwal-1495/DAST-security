@@ -82,6 +82,8 @@ jobs:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_CHANNEL: '#all-just-daksh'
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: 'gemini-1.5-flash'
+          MAX_AI_CLASSIFY: '3'
         run: |
           python slack_reporter_full.py report.json javascript
 

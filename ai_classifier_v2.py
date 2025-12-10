@@ -76,8 +76,10 @@ class AIVulnerabilityClassifier:
         try:
             import google.generativeai as genai
             genai.configure(api_key=api_key)
-            # Using gemini-2.0-flash - free tier, fast and capable
-            self.gemini_model = genai.GenerativeModel('gemini-2.0-flash')
+            # Use gemini-1.5-flash (lighter, higher rate limits) instead of 2.0-flash
+            model_name = os.getenv('GEMINI_MODEL', 'gemini-1.5-flash')
+            self.gemini_model = genai.GenerativeModel(model_name)
+            print(f"✅ Google Gemini initialized ({model_name})")
             print("✅ Google Gemini initialized (Primary provider)")
         except ImportError:
             print("⚠️  google-generativeai not installed. Run: pip install google-generativeai")
@@ -357,7 +359,7 @@ Be precise and use ONLY the categories from the list above."""
         total = len(vulnerabilities)
         
         print(f"\n🔍 Classifying {total} vulnerabilities...")
-        print(f"⏱️  Rate limiting: 4 seconds between requests to avoid API limits")
+        print(f"⏱️  Rate limiting: 5 seconds between requests to avoid API limits")
         
         for i, vuln in enumerate(vulnerabilities, 1):
             try:
@@ -367,10 +369,10 @@ Be precise and use ONLY the categories from the list above."""
                 if i % 5 == 0:
                     print(f"   Progress: {i}/{total} ({i*100//total}%)")
                 
-                # Rate limiting: Wait 4 seconds between requests
-                # Gemini free tier: 15 requests/minute = 1 request per 4 seconds
+                # Rate limiting: Wait 5 seconds between requests (increased from 4)
+                # Gemini 1.5-flash: 15 requests/minute = 1 request per 4 seconds
                 if i < total:  # Don't wait after last request
-                    time.sleep(4)
+                    time.sleep(5)
                     
             except Exception as e:
                 error_msg = str(e)
