@@ -1,7 +1,8 @@
 services:
   - type: web
     name: vulnerable-web-app
-    env: docker
-    dockerfilePath: ./Dockerfile
+    env: node
+    buildCommand: npm install
+    startCommand: node index.js
     plan: free
     autoDeploy: true
