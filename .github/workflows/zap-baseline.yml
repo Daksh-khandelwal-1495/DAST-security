@@ -15,6 +15,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+      
       - name: Wait for Render deployment to be ready
         run: |
           echo "Checking if app is ready..."
@@ -41,4 +50,14 @@ jobs:
           path: |
             report.html
             report.json
+            
+      - name: Send AI-Powered Slack Report
+        if: always()
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL: '#all-just-daksh'
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python slack_reporter_full.py report.json javascript
+
 
