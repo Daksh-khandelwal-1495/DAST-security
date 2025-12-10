@@ -32,12 +32,11 @@ jobs:
       
       - name: Fix workspace permissions
         run: |
-          chmod -R 777 ${{ github.workspace }}
+          sudo chmod -R 777 ${{ github.workspace }}
           
       - name: ZAP Baseline Scan (Remote Target)
         run: |
           docker run --rm \
-            --user $(id -u):$(id -g) \
             -v ${{ github.workspace }}:/zap/wrk:rw \
             ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py \
@@ -47,6 +46,11 @@ jobs:
             -j \
             -r report.html \
             -J report.json || true
+      
+      - name: Fix report permissions
+        if: always()
+        run: |
+          sudo chmod -R 755 ${{ github.workspace }}
       
       - name: List generated files
         run: |
