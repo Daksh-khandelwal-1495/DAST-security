@@ -66,10 +66,23 @@ class FullDastSlackReporter:
         
         print(f"📊 Found {len(alerts)} vulnerability types")
         
+        # Limit to top 10 critical/high vulnerabilities to avoid rate limits
+        max_ai_classify = int(os.getenv('MAX_AI_CLASSIFY', '10'))
+        
+        # Sort by severity and take top N
+        sorted_alerts = sorted(alerts, key=lambda x: self._get_severity_score(x.get('riskdesc', 'Low')), reverse=True)
+        alerts_to_classify = sorted_alerts[:max_ai_classify]
+        
+        if len(alerts) > max_ai_classify:
+            print(f"⚠️  Limiting AI classification to top {max_ai_classify} vulnerabilities to avoid rate limits")
+            print(f"   (Set MAX_AI_CLASSIFY env var to change this limit)")
+        
         # Process with AI classification
         if self.ai_classifier:
-            print("\n🤖 Running AI classification...")
-            classified_alerts = self.ai_classifier.bulk_classify(alerts)
+            print(f"\n🤖 Running AI classification on {len(alerts_to_classify)} vulnerabilities...")
+            classified_alerts = self.ai_classifier.bulk_classify(alerts_to_classify)
+            # Add remaining alerts without AI classification
+            classified_alerts.extend(sorted_alerts[max_ai_classify:])
         else:
             classified_alerts = alerts
         
@@ -98,6 +111,18 @@ class FullDastSlackReporter:
             'ai_enabled': self.ai_classifier is not None,
             'remediation_enabled': True
         }
+    
+    def _get_severity_score(self, riskdesc: str) -> int:
+        """Convert risk description to numeric score for sorting"""
+        severity_map = {
+            'Critical': 5,
+            'High': 4,
+            'Medium': 3,
+            'Low': 2,
+            'Informational': 1
+        }
+        risk = riskdesc.split()[0]
+        return severity_map.get(risk, 0)
     
     def create_summary_blocks(self, report_data: Dict) -> List[Dict]:
         """Create Slack blocks for summary section"""

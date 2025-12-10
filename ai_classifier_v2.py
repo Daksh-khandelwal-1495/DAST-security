@@ -7,6 +7,7 @@ Priority: Gemini (Quality) → Groq (Speed) → OpenAI (Alternative) → Pattern
 import os
 import json
 import re
+import time
 from typing import Dict, List, Optional, Tuple
 from dotenv import load_dotenv
 
@@ -344,7 +345,7 @@ Be precise and use ONLY the categories from the list above."""
     
     def bulk_classify(self, vulnerabilities: List[Dict]) -> List[Dict]:
         """
-        Classify multiple vulnerabilities efficiently
+        Classify multiple vulnerabilities efficiently with rate limiting
         
         Args:
             vulnerabilities: List of vulnerability dicts
@@ -356,6 +357,7 @@ Be precise and use ONLY the categories from the list above."""
         total = len(vulnerabilities)
         
         print(f"\n🔍 Classifying {total} vulnerabilities...")
+        print(f"⏱️  Rate limiting: 4 seconds between requests to avoid API limits")
         
         for i, vuln in enumerate(vulnerabilities, 1):
             try:
@@ -364,10 +366,30 @@ Be precise and use ONLY the categories from the list above."""
                 
                 if i % 5 == 0:
                     print(f"   Progress: {i}/{total} ({i*100//total}%)")
+                
+                # Rate limiting: Wait 4 seconds between requests
+                # Gemini free tier: 15 requests/minute = 1 request per 4 seconds
+                if i < total:  # Don't wait after last request
+                    time.sleep(4)
+                    
             except Exception as e:
-                print(f"⚠️  Failed to classify vulnerability {i}: {e}")
-                # Add basic classification on failure
-                results.append(self._classify_with_patterns(vuln))
+                error_msg = str(e)
+                
+                # Handle rate limit errors specifically
+                if "429" in error_msg or "quota" in error_msg.lower() or "rate" in error_msg.lower():
+                    print(f"⚠️  Rate limit hit at vulnerability {i}. Waiting 60 seconds...")
+                    time.sleep(60)
+                    # Retry this vulnerability
+                    try:
+                        classification = self.classify_vulnerability(vuln)
+                        results.append(classification)
+                    except Exception as retry_error:
+                        print(f"⚠️  Retry failed for vulnerability {i}: {retry_error}")
+                        results.append(self._classify_with_patterns(vuln))
+                else:
+                    print(f"⚠️  Failed to classify vulnerability {i}: {e}")
+                    # Add basic classification on failure
+                    results.append(self._classify_with_patterns(vuln))
         
         print(f"✅ Classification complete: {len(results)}/{total}")
         return results
