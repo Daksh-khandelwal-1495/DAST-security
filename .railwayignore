@@ -11,3 +11,5 @@ Makefile
 *.bat
 *.sh
 nul
+requirements.txt
+.github/
