@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.py
+.git/
+.env
+node_modules/
+*.md
+Dockerfile*
+docker-compose.yml
+Makefile
+*.bat
+*.sh
+nul
