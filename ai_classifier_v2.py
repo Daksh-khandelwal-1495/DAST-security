@@ -47,6 +47,12 @@ class AIVulnerabilityClassifier:
         "DESERIALIZATION": "Insecure Deserialization",
         "COMPONENTS": "Vulnerable Components",
         "LOGGING": "Security Logging Failures",
+        "CMD_INJECTION": "Command Injection",
+        "PATH_TRAVERSAL": "Path Traversal",
+        "RACE_CONDITION": "Race Conditions",
+        "SESSION": "Session Management",
+        "INFO_DISCLOSURE": "Information Disclosure",
+        "BUSINESS_LOGIC": "Business Logic Flaws",
         "OTHER": "Other Security Issues"
     }
     

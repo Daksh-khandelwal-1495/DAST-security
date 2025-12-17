@@ -94,7 +94,7 @@ class FullDastSlackReporter:
         print(f"📊 Found {len(alerts)} vulnerability types")
         
         # Limit to top N critical/high vulnerabilities to avoid rate limits
-        max_ai_classify = int(os.getenv('MAX_AI_CLASSIFY', '3'))  # Reduced from 10 to 3
+        max_ai_classify = int(os.getenv('MAX_AI_CLASSIFY', '5'))  # Increased from 3 to 5
         
         # Sort by severity and take top N
         sorted_alerts = sorted(alerts, key=lambda x: self._get_severity_score(x.get('riskdesc', 'Low')), reverse=True)
